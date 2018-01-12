@@ -1,4 +1,5 @@
 #include "vmu_utils.h"
+#include "lcmtypes/vmu931_data_imu.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -6,6 +7,8 @@
 #include <termios.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <lcm/lcm.h>
+
 
 int connect_to_serial_port(char device_filename[]) {
     struct termios options;
@@ -13,7 +16,7 @@ int connect_to_serial_port(char device_filename[]) {
     int fd = open(device_filename, O_RDWR | O_SYNC | O_NOCTTY);
 
     while( fd < 0 ) {
-        printf("WARN: Failed to connect to %s. Retrying...\n", device_filename);
+        // printf("WARN: Failed to connect to %s. Retrying...\n", device_filename);
         fd = open(device_filename, O_RDWR | O_SYNC | O_NOCTTY);
         sleep(1);
     }
@@ -57,7 +60,7 @@ int load_msg(int vmu_fd) {
 
             // Read in the length of the message.
             if( !read(vmu_fd, &msg_size, 1) ) {
-               printf("WARN: Failed to read length of message.\n"); 
+            //    printf("WARN: Failed to read length of message.\n"); 
                return -1;
             }
 
@@ -65,7 +68,7 @@ int load_msg(int vmu_fd) {
             if( msg_size < 2 ) { return -1; }
 
             if( !read(vmu_fd, &data, msg_size-2) ) {
-                printf("WARN: Failed to read message data.\n");
+                // printf("WARN: Failed to read message data.\n");
                 return -1;
             }
 
@@ -82,7 +85,7 @@ int load_msg(int vmu_fd) {
 
             // Load the message for future use.
             if( VMU_ERR_SUCCESS != vmutils_loadMessage(msg, msg_size, &string_or_data_msg) ) {
-                printf("WARN: Failed to load message.\n");
+                // printf("WARN: Failed to load message.\n");
                 return -1;
             }
             return msg_size;
@@ -91,7 +94,7 @@ int load_msg(int vmu_fd) {
 
             // Read in the length of the message.
             if( !read(vmu_fd, &msg_size, 1) ) {
-                printf("WARN: Failed to read length of message.\n");
+                // printf("WARN: Failed to read length of message.\n");
                 return -1;
             }
 
@@ -99,7 +102,7 @@ int load_msg(int vmu_fd) {
             if( msg_size < 2 ) { return -1; }
             
             if( !read(vmu_fd, &data, msg_size-2) ) {
-                printf("WARN: Failed to read string from message.\n");
+                // printf("WARN: Failed to read string from message.\n");
                 return -1;
             }
 
@@ -116,7 +119,7 @@ int load_msg(int vmu_fd) {
 
             // Load the message for future use.
             if( VMU_ERR_SUCCESS != vmutils_loadMessage(msg, msg_size, &string_or_data_msg) ) {
-                printf("WARN: Failed to load message. %d\n", vmutils_loadMessage(msg, msg_size, &string_or_data_msg));
+                // printf("WARN: Failed to load message. %d\n", vmutils_loadMessage(msg, msg_size, &string_or_data_msg));
                 return -1;
             }
             return msg_size;
@@ -130,7 +133,7 @@ int send_cmd(int vmu_fd, Cmd cmd) {
     char cmd_buffer[VMU_CMD_NUM_BYTES];
 
     if( vmutils_buildCmd(cmd, cmd_buffer) != VMU_ERR_SUCCESS) {
-        printf("WARN: Failed to build command.\n");
+        // printf("WARN: Failed to build command.\n");
         return -1;
     }
 
@@ -224,6 +227,16 @@ int main(char argc, char** argv) {
     Data_xyz    data_mag;
     Data_wxyz   data_quat;
 
+    lcm_t * lcm = lcm_create(NULL);
+
+    if(!lcm)
+    {
+        printf("Error: Failed to create LCM.");
+        return 1;
+    }
+
+    vmu931_data_imu data_imu;
+
     int vmu_fd = connect_to_serial_port(device_filename);
     printf("Connected!\n");
 
@@ -237,22 +250,57 @@ int main(char argc, char** argv) {
 
         switch( data_type ) {
             case dt_accel:
-                printf("A\n");
+                // printf("A\n");
+                vmutils_retrieveXYZData(&data_accel);
+                data_imu.data_accel.timestamp = data_accel.timestamp;
+                data_imu.data_accel.x = data_accel.x;
+                data_imu.data_accel.y = data_accel.y;
+                data_imu.data_accel.z = data_accel.z;
+                vmu931_data_imu_publish(lcm, "VMU931", &data_imu);
                 break;
             case dt_euler:
-                printf("E\n");
+                // printf("E\n");
+                vmutils_retrieveXYZData(&data_euler);
+                data_imu.data_euler.timestamp = data_euler.timestamp;
+                data_imu.data_euler.x = data_euler.x;
+                data_imu.data_euler.y = data_euler.y;
+                data_imu.data_euler.z = data_euler.z;
+                vmu931_data_imu_publish(lcm, "VMU931", &data_imu);
                 break;
             case dt_gyro:
-                printf("G\n");
+                // printf("G\n");
+                vmutils_retrieveXYZData(&data_gyro);
+                data_imu.data_gyro.timestamp = data_gyro.timestamp;
+                data_imu.data_gyro.x = data_gyro.x;
+                data_imu.data_gyro.y = data_gyro.y;
+                data_imu.data_gyro.z = data_gyro.z;
+                vmu931_data_imu_publish(lcm, "VMU931", &data_imu);
                 break;
             case dt_heading:
-                printf("H\n");
+                // printf("H\n");
+                vmutils_retrieveHData(&data_heading);
+                data_imu.data_heading.timestamp = data_heading.timestamp;
+                data_imu.data_heading.h = data_heading.h;
+                vmu931_data_imu_publish(lcm, "VMU931", &data_imu);
                 break;
             case dt_mag:
-                printf("M\n");
+                // printf("M\n");
+                vmutils_retrieveXYZData(&data_mag);
+                data_imu.data_mag.timestamp = data_mag.timestamp;
+                data_imu.data_mag.x = data_mag.x;
+                data_imu.data_mag.y = data_mag.y;
+                data_imu.data_mag.z = data_mag.z;
+                vmu931_data_imu_publish(lcm, "VMU931", &data_imu);
                 break;
             case dt_quat:
-                printf("Q\n");
+                // printf("Q\n");
+                vmutils_retrieveWXYZData(&data_quat);
+                data_imu.data_quat.timestamp = data_quat.timestamp;
+                data_imu.data_quat.w = data_quat.w;
+                data_imu.data_quat.x = data_quat.x;
+                data_imu.data_quat.y = data_quat.y;
+                data_imu.data_quat.z = data_quat.z;
+                vmu931_data_imu_publish(lcm, "VMU931", &data_imu);
                 break;
             default:
                 break;
@@ -261,5 +309,6 @@ int main(char argc, char** argv) {
     }
 
     close(vmu_fd);
+    lcm_destroy(lcm);
     return 0;
 }
