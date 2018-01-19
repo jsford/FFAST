@@ -2,8 +2,11 @@
 
 #include "Arduino.h"
 #include "vehicle.h"
+#include "lookup.h"
 
 volatile long long odom = 0;
+volatile uint16_t throttle_val = 0;
+volatile uint16_t steering_val = 0;
 
 void estop_isr(void) {
     analogWrite(THROTTLE_PIN, THROTTLE_STOP);
@@ -81,53 +84,22 @@ Vehicle::Vehicle(void) : servo_curr_val_(STEERING_CENTER),
 
 Vehicle::~Vehicle(void) {}
 
-void Vehicle::set_steering_angle(int angle_rad) {
+void Vehicle::set_steering_angle(float angle_rad) {
     // Cap the steering angle at the vehicle limits.
-    //angle_rad = (angle_rad >  MAX_STEERING_ANGLE_RAD) ?   MAX_STEERING_ANGLE_RAD : angle_rad;
-    //angle_rad = (angle_rad < -MAX_STEERING_ANGLE_RAD) ?  -MAX_STEERING_ANGLE_RAD : angle_rad;
-
-    // TODO map steering angle to servo val
-    // servo_target_val_ = map(angle_rad, angle_min, angle_max, 0, 255);
-    servo_target_val_ = angle_rad;
+    angle_rad = (angle_rad >  MAX_STEERING_ANGLE_RAD) ?   MAX_STEERING_ANGLE_RAD : angle_rad;
+    angle_rad = (angle_rad < -MAX_STEERING_ANGLE_RAD) ?  -MAX_STEERING_ANGLE_RAD : angle_rad;
+    int steering_val = map( angle_rad, -MAX_STEERING_ANGLE_RAD, MAX_STEERING_ANGLE_RAD, STEERING_RIGHT_MAX, STEERING_LEFT_MAX );
+    analogWrite(STEERING_PIN, steering_val);
 }
 
-void Vehicle::set_throttle_speed(int speed_mps) {
-    // TODO map speed to throttle val
-    // throttle_target_val_ = 
-    throttle_target_val_ = speed_mps;
-}
-
-void Vehicle::routine(void) {
-    if ( (servo_target_val_ != servo_curr_val_) && (micros() - servo_last_chg_ >= SERVO_DELAY_US) )
-    {
-        if (servo_target_val_ > servo_curr_val_) servo_curr_val_++;
-        else if (servo_target_val_ < servo_curr_val_) servo_curr_val_--;
-        analogWrite(STEERING_PIN, servo_curr_val_);
-        servo_last_chg_ = micros();
-    }
-
-    if ( (throttle_target_val_ > throttle_curr_val_) && (micros() - throttle_last_chg_ >= THROTTLE_SOFT_DELAY_US) )
-    {
-        throttle_curr_val_++;
-        analogWrite(THROTTLE_PIN, throttle_curr_val_);
-        throttle_last_chg_ = micros();
-    }
-
-    else if ( (throttle_target_val_ < throttle_curr_val_) && (micros() - throttle_last_chg_ >= THROTTLE_HARD_DELAY_US) )
-    {
-        throttle_curr_val_--;
-        analogWrite(THROTTLE_PIN, throttle_curr_val_);
-        throttle_last_chg_ = micros();
-    }
-    // Serial.println(throttle_curr_val_);
-
-    /* if (micros() - last_pub_ >= PUBLISH_DELAY_US) {
-        last_pub_ = micros();
-    }; */
-}
-
-void Vehicle::publish_data(void) {
-    
+void Vehicle::set_throttle_speed(float speed_mps) {
+    float speed_tps = speed_mps * 1000.0 / (2*M_PI*VEHICLE_WHEEL_RAD_MM) * VEHICLE_GEAR_RATIO * 6;
+    speed_tps = (speed_tps > MAX_THROTTLE_SPEED_TPS) ? MAX_THROTTLE_SPEED_TPS : speed_tps;
+    speed_tps = (speed_tps < MIN_THROTTLE_SPEED_TPS) ? MIN_THROTTLE_SPEED_TPS : speed_tps;
+    int speed_tps_rounded = (int)(speed_tps)/20 * 20 + ((int)(speed_tps)%20 >= 10 ? 20 : 0);
+    int lookup_idx = (speed_tps_rounded + 1000)/20;
+    throttle_val = lookup[lookup_idx];
+    analogWrite(THROTTLE_PIN, throttle_val);
 }
 
 float Vehicle::calc_speed_ticks_per_sec(void) {

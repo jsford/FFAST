@@ -48,6 +48,8 @@
 
 constexpr uint8_t hall_effect_sequence[6] = {0, 2, 1, 4, 5, 3};
 extern volatile long long odom;
+extern volatile uint16_t steering_val;
+extern volatile uint16_t throttle_val;
 
 void estop_isr(void);
 void odom_isr(void);
@@ -58,10 +60,9 @@ class Vehicle {
         Vehicle();
         ~Vehicle();
 
-        void set_steering_angle(int angle_rad);
-        void set_throttle_speed(int speed_mps);
+        void set_steering_angle(float angle_rad);
+        void set_throttle_speed(float speed_mps);
         float calc_speed_ticks_per_sec(void);
-        void routine(void);
         int32_t get_odom(void) {
           return odom;
         }
