@@ -4,14 +4,14 @@
 #include <Arduino.h>
 
 // Control board pinout
-#define STEERING_PIN   22
+#define STEERING_PIN    4
 #define THROTTLE_PIN   23
 #define LED_PIN        13
 #define ESTOP_PIN       2
 
 // Motor hall effect pins
 #define MOTOR_PHASE0_PIN 3
-#define MOTOR_PHASE1_PIN 4
+#define MOTOR_PHASE1_PIN 6
 #define MOTOR_PHASE2_PIN 5
 
 // Vehicle Mechanical Constants 
@@ -19,64 +19,62 @@
 #define VEHICLE_WHEEL_RAD_MM   32.385
 
 // PWM
-#define PWM_RESOLUTION_BITS 16
-#define PWM_FREQUENCY_HZ    76
+#define PWM_RESOLUTION_BITS            16
+#define THROTTLE_PWM_FREQUENCY_HZ     480
+#define STEERING_PWM_FREQUENCY_HZ      76
 
 // Throttle Range
-#define THROTTLE_FWD_MAX  ((1<<PWM_RESOLUTION_BITS)*1.00*PWM_FREQUENCY_HZ/1000.0)
-#define THROTTLE_STOP ((1<<PWM_RESOLUTION_BITS)*1.50*PWM_FREQUENCY_HZ/1000.0)
-#define THROTTLE_REV_MAX  ((1<<PWM_RESOLUTION_BITS)*2.00*PWM_FREQUENCY_HZ/1000.0)
+#define THROTTLE_FWD_MAX  ((1<<PWM_RESOLUTION_BITS)*1.00*THROTTLE_PWM_FREQUENCY_HZ/1000.0)
+#define THROTTLE_STOP ((1<<PWM_RESOLUTION_BITS)*1.50*THROTTLE_PWM_FREQUENCY_HZ/1000.0)
+#define THROTTLE_REV_MAX  ((1<<PWM_RESOLUTION_BITS)*2.00*THROTTLE_PWM_FREQUENCY_HZ/1000.0)
 
 // Steering Range
-#define STEERING_LEFT_MAX   ((1<<PWM_RESOLUTION_BITS)*1.75*PWM_FREQUENCY_HZ/1000.0)
-#define STEERING_CENTER     ((1<<PWM_RESOLUTION_BITS)*1.5*PWM_FREQUENCY_HZ/1000.0)
-#define STEERING_RIGHT_MAX  ((1<<PWM_RESOLUTION_BITS)*1.25*PWM_FREQUENCY_HZ/1000.0)
+#define STEERING_LEFT_MAX   ((1<<PWM_RESOLUTION_BITS)*1.75*STEERING_PWM_FREQUENCY_HZ/1000.0)
+#define STEERING_CENTER     ((1<<PWM_RESOLUTION_BITS)*1.5*STEERING_PWM_FREQUENCY_HZ/1000.0)
+#define STEERING_RIGHT_MAX  ((1<<PWM_RESOLUTION_BITS)*1.25*STEERING_PWM_FREQUENCY_HZ/1000.0)
+
+// Speed PID Parameters
+#define KP   0.3
+#define KI   0
+#define KD   0
 
 // Error blink periods
 #define ESTOP_ERR_PERIOD                1000
 #define INIT_ACCEL_ERR_PERIOD           2000
 #define VEHICLE_SINGLETON_ERR_PERIOD    3000
 
-// Delay between changing PWM output (micros)
-#define SERVO_DELAY_US             0
-#define THROTTLE_SOFT_DELAY_US     0
-#define THROTTLE_HARD_DELAY_US     0
-#define PUBLISH_DELAY_US         100
-
-// Vehicle max steering angle at the wheels.
+// Vehicle max steering angle at the wheels
 #define MAX_STEERING_ANGLE_RAD  (M_PI*0.25)
 
 constexpr uint8_t hall_effect_sequence[6] = {0, 2, 1, 4, 5, 3};
 extern volatile long long odom;
-extern volatile uint16_t steering_val;
-extern volatile uint16_t throttle_val;
-
-void estop_isr(void);
-void odom_isr(void);
-void error_blink(int period_ms);
+extern volatile double target_speed_tps_;
+extern volatile double actual_speed_tps_;
+extern volatile double sent_speed_tps_;
+extern volatile uint16_t throttle_val_;
+extern IntervalTimer odom_timer;
         
 class Vehicle {
     public:
         Vehicle();
         ~Vehicle();
 
-        void set_steering_angle(float angle_rad);
-        void set_throttle_speed(float speed_mps);
-        float calc_speed_ticks_per_sec(void);
-        int32_t get_odom(void) {
-          return odom;
-        }
+        void set_steering_angle(float);
+        void set_throttle_speed(float);
+        void set_profile(int);
+        double get_odom_m(void);
+        double get_speed_tps(void);
+        double get_speed_mps(void);
+        static void odom_isr(void);
+        static void estop_isr(void);
+        static void error_blink(int);
+        int get_throttle_val(void) { return throttle_val_; }
+        int get_steering_val(void) { return steering_val_; }
 
     private:
-        uint16_t servo_curr_val_;
-        uint16_t servo_target_val_;
-        uint64_t servo_last_chg_;
-        uint16_t throttle_curr_val_;
-        uint16_t throttle_target_val_;
-        uint64_t throttle_last_chg_;
-        uint64_t last_pub_;
-
-        void publish_data(void);
+        uint16_t steering_val_;
+        static void send_speed_(float);
+        static int interpolate_(float);
 };
 
 #endif

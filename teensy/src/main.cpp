@@ -1,21 +1,6 @@
 #include "vehicle.h"
 
 
-uint32_t readline(char* line, uint32_t len) {
-  int i = 0;
-  while( Serial.available() ) {
-    line[i] = Serial.read();
-    if( line[i] == '\n' ) { 
-        line[i] = '\0';
-        return i;
-    }
-
-    ++i;
-    if (i >= len) { return 0; }
-  }
-  return 0;
-}
-
 int main(void)
 {
 
@@ -25,41 +10,50 @@ int main(void)
     // Initialize the Vehicle.
     Vehicle vehicle = Vehicle();
 
-    char cmd_c;
-    float cmd_val;
-    char rcv[32];
+    int i;
+    char c;
+    union {
+        float data = 0;
+        byte tobyte[];
+    }serial_float;
     
     while (1) {
-        
-        cmd_c = 0; cmd_val = 0;
 
-        int chars = readline(rcv, sizeof(rcv));
-        int num_vals = sscanf(rcv, "%c%f", &cmd_c, &cmd_val);
-
-        if (chars != 0) {
-            if (cmd_c=='t' && num_vals == 2) {
-                vehicle.set_throttle_speed(cmd_val);
-                Serial.print("Throttle speed set to ");
-                Serial.println(cmd_val);
-            } else if (cmd_c=='s' && num_vals == 2) {
-                vehicle.set_steering_angle(cmd_val);
-                Serial.print("Steering angle set to ");
-                Serial.println(cmd_val);
-            } else if (cmd_c=='f' && num_vals == 1) {
-                vehicle.set_throttle_speed(9999);
-                Serial.println("Forward at full speed.");
-            } else if (cmd_c=='r' && num_vals == 1) {
-                vehicle.set_throttle_speed(-9999);
-                Serial.println("Reverse at full speed.");
-            } else if (cmd_c=='s' && num_vals == 1) {
-                vehicle.set_throttle_speed(0);
-                Serial.println("Throttle stopped.");
+        if (Serial.available())
+        {
+            c = Serial.read();
+            if (c == 'v')
+            {
+                for (i=0;i<sizeof(serial_float);i++) { serial_float.tobyte[i] = Serial.read(); }
+                if (Serial.read() == '\n') { vehicle.set_throttle_speed(serial_float.data); }
+            }
+            else if (c == 's')
+            {
+                for (i=0;i<sizeof(serial_float);i++) { serial_float.tobyte[i] = Serial.read(); }
+                if (Serial.read() == '\n') { vehicle.set_steering_angle(serial_float.data); }
+            }
+            else if (c == 'e')
+            {
+                if (Serial.read() == '\n') { vehicle.estop_isr(); }
+            }
+            else if (c == 'p')
+            {
+                uint8_t val = Serial.read();
+                if (Serial.read() == '\n') { vehicle.set_profile(val); }
             }
         }
-        Serial.print("throttle: ");
-        Serial.print(throttle_val);
-        Serial.print("\tsteering: ");
-        Serial.println(steering_val);
+
+        serial_float.data = vehicle.get_odom_m();
+        Serial.write('o');
+        for (int i=0; i<sizeof(serial_float); i++) { Serial.write(serial_float.tobyte[i]); }
+        Serial.write('\n');
+        delayMicroseconds(100);
+
+        serial_float.data = vehicle.get_speed_mps();
+        Serial.write('s');
+        for (int i=0; i<sizeof(serial_float); i++) { Serial.write(serial_float.tobyte[i]); }
+        Serial.write('\n');
+        delayMicroseconds(100);
 
     }
 
