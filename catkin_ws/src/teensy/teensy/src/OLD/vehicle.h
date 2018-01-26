@@ -42,12 +42,20 @@
 #define KI   0
 #define KD   0
 
+
         
+constexpr uint8_t hall_effect_sequence[6] = {0, 2, 1, 4, 5, 3};
+
 class VehicleDef {
     public:
         bool estop_status;
+        uint32_t steering_val;
+        uint32_t throttle_val;
+        double sent_speed_tps;
         double actual_speed_tps;
-        int64_t odom;
+        double target_speed_tps;
+        double steering_ang_rad;
+        uint64_t odom;
         IntervalTimer odom_timer;
 
         VehicleDef();
@@ -62,14 +70,9 @@ class VehicleDef {
         double get_steering_rad(void) volatile { return steering_ang_rad; }
         int get_throttle_val(void) volatile { return throttle_val; }
         int get_steering_val(void) volatile { return steering_val; }
-        void send_speed(double) volatile;
+        void send_speed(void) volatile;
 
     private:
-        uint32_t steering_val;
-        uint32_t throttle_val;
-        double sent_speed_tps;
-        double target_speed_tps;
-        double steering_ang_rad;
         int interpolate_(double) volatile;
 };
 

@@ -1,9 +1,13 @@
 #include "vehicle.h"
-#include <Arduino.h>
-#include <ros.h>
-#include <tf/transform_broadcaster.h>
+
+#include "teensy/Command.h"
 #include <nav_msgs/Odometry.h>
-#include <teensy/Command.h>
+#include <tf/tf.h>
+#include <tf/transform_broadcaster.h>
+
+#include <ros.h>
+#include <ros/time.h>
+#include <Arduino.h>
 
 ros::NodeHandle nh;
 
@@ -31,28 +35,28 @@ int main(int argc, char** argv){
     odom.pose.pose.position.z = 0.0;
     odom.twist.twist.linear.y = 0.0;
     
-    ros::Publisher pub("odom", &odom);
+    //ros::Publisher pub("odom", &odom);
     
     nh.subscribe(sub);
-    nh.advertise(pub);
+    //nh.advertise(pub);
 
     double x = 0.0;
     double y = 0.0;
     double th = 0.0;
 
     ros::Time curr_time, last_time;
-    curr_time = ros::Time::now();
+    curr_time = nh.now();
     last_time = curr_time;
     
     while (1) {
 
         nh.spinOnce();
 
-        curr_time = ros::Time::now();
+        curr_time = nh.now();
         double v = Vehicle.get_speed_mps();
         double delta = Vehicle.get_steering_rad();
         double beta = atan( WHEELBASE_REAR_MM*tan(delta) / (WHEELBASE_FRONT_MM+WHEELBASE_REAR_MM) );
-        double dt = (curr_time - last_time).toSec();
+        double dt = curr_time.toSec() - last_time.toSec();
         
         x += v * cos(th+beta) * dt;
         y += v * sin(th+beta) * dt;
@@ -62,7 +66,7 @@ int main(int argc, char** argv){
         odom_trans.header.stamp = curr_time;
         odom_trans.transform.translation.x = x;
         odom_trans.transform.translation.y = y;
-        geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(th);
+        geometry_msgs::Quaternion odom_quat = tf::createQuaternionFromYaw(th);
         odom_trans.transform.rotation = odom_quat;
         odom_broadcaster.sendTransform(odom_trans);
 
@@ -72,7 +76,7 @@ int main(int argc, char** argv){
         odom.pose.pose.orientation = odom_quat;
         odom.twist.twist.linear.x = v;
         odom.twist.twist.angular.z = th_dot;
-        pub.publish(&odom);
+        //pub.publish(&odom);
 
         last_time = curr_time;
 

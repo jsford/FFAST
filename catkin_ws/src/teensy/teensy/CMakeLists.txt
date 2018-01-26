@@ -8,6 +8,21 @@ find_package(catkin REQUIRED COMPONENTS
     ros_teensy
     rosserial_client
     rosserial_arduino
+    message_generation
+)
+
+add_message_files(
+    FILES
+    Command.msg
+    Feedback.msg
+)
+
+generate_messages(
+    DEPENDENCIES
+)
+
+catkin_package(
+    CATKIN_DEPENDS message_runtime
 )
 
 rosserial_generate_ros_lib(
