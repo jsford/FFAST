@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <ros/ros.h>
-#include <teensy/Command.h>
+#include <teensy_msgs/Command.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <std_msgs/Float64.h>
 
@@ -21,11 +21,11 @@ int main(int argc, char ** argv)
 {
     ros::init(argc, argv, "goal");
     ros::NodeHandle nh;
-    ros::Publisher pub_cmd = nh.advertise<teensy::Command>("/teensy/command",10);
+    ros::Publisher pub_cmd = nh.advertise<teensy_msgs::Command>("/teensy/command",10);
     ros::Subscriber sub_pose = nh.subscribe("/laser_scan_matcher/pose",10,poseCallback);
     ros::Subscriber sub_goal = nh.subscribe("/goal",1,goalCallback);
 
-    teensy::Command cmd;
+    teensy_msgs::Command cmd;
     
     ros::Rate r(200);
     

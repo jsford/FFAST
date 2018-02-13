@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
-#include <teensy/Command.h>
+#include <teensy_msgs/Command.h>
 
 #define WHEELBASE_M 0.257
 
@@ -20,7 +20,7 @@ double ang_vel_to_steering(double v, double omega) {
 
 void cmdvelCallback(const geometry_msgs::Twist& twist)
 {
-    teensy::Command cmd;
+    teensy_msgs::Command cmd;
 
     cmd.vel_mps = twist.linear.x;
     cmd.steering_rad = ang_vel_to_steering(twist.linear.x, twist.angular.z);
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "cmd_publisher");
     ros::NodeHandle nh;
 
-    cmd_pub = nh.advertise<teensy::Command>("/teensy/command", 10);
+    cmd_pub = nh.advertise<teensy_msgs::Command>("/teensy/command", 10);
     ros::Subscriber cmdvel_sub = nh.subscribe("/cmd_vel",10,cmdvelCallback);
 
     ros::spin();

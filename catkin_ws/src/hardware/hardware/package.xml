@@ -51,11 +51,13 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_export_depend>ros_teensy</build_export_depend>
   <build_export_depend>teensy</build_export_depend>
+  <build_export_depend>teensy_msgs</build_export_depend>
   <build_export_depend>tf_broadcaster</build_export_depend>
   <build_export_depend>urg_node</build_export_depend>
   <build_export_depend>vmu931</build_export_depend>
   <exec_depend>ros_teensy</exec_depend>
   <exec_depend>teensy</exec_depend>
+  <exec_depend>teensy_msgs</exec_depend>
   <exec_depend>tf_broadcaster</exec_depend>
   <exec_depend>urg_node</exec_depend>
   <exec_depend>vmu931</exec_depend>

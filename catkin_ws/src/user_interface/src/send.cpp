@@ -1,14 +1,14 @@
 #include <stdio.h>
 #include <ros/ros.h>
-#include <teensy/Command.h>
+#include <teensy_msgs/Command.h>
 
 int
 main(int argc, char ** argv)
 {
     ros::init(argc, argv, "send_cmd");
     ros::NodeHandle nh;
-    ros::Publisher pub_cmd = nh.advertise<teensy::Command>("/teensy/command", 10);
-    teensy::Command cmd;
+    ros::Publisher pub_cmd = nh.advertise<teensy_msgs::Command>("/teensy/command", 10);
+    teensy_msgs::Command cmd;
     char str[32];
     char cmd_c;
     float cmd_val;

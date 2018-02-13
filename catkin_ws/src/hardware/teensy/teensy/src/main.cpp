@@ -3,10 +3,11 @@
 #include <Arduino.h>
 #include <ros.h>
 #include <ros/time.h>
-#include <teensy/Feedback.h>
-#include <teensy/Command.h>
+#include <teensy_msgs/Feedback.h>
+#include <teensy_msgs/Command.h>
+#include <teensy_msgs/Debug.h>
 
-void commandCallback(const teensy::Command& cmd) {
+void commandCallback(const teensy_msgs::Command& cmd) {
     // Set throttle speed and steering angle according to command.
     Vehicle.set_velocity_setpoint(cmd.vel_mps);
     Vehicle.set_steering_angle(cmd.steering_rad);
@@ -21,25 +22,30 @@ int main(void) {
     nh.getHardware()->setBaud(115200);
     nh.initNode();
 
-    teensy::Feedback fdb;
-    ros::Publisher pub("/teensy/feedback", &fdb);
-    nh.advertise(pub);
+    teensy_msgs::Feedback fdb;
+    ros::Publisher pub_fdb("/teensy/feedback", &fdb);
+    nh.advertise(pub_fdb);
 
-    ros::Subscriber<teensy::Command> sub("/teensy/command", &commandCallback);
+    teensy_msgs::Debug debug_msg;
+    ros::Publisher pub_debug("/teensy/debug", &debug_msg);
+    nh.advertise(pub_debug);
+
+    ros::Subscriber<teensy_msgs::Command> sub("/teensy/command", &commandCallback);
     nh.subscribe(sub);
 
     while (!Vehicle.estop_status) {
         fdb.odom_m = Vehicle.get_odom_m();
         fdb.vel_mps = Vehicle.get_speed_mps();
-        fdb.setpoint  = TPS_TO_MPS(Vehicle.velocity_setpoint_tps);
-        fdb.measured  = TPS_TO_MPS(Vehicle.velocity_measured_tps);
-        fdb.command  = TPS_TO_MPS(Vehicle.velocity_commanded_tps);
-        fdb.err = Vehicle.get_velocity_pwm()*(float)1e6/THROTTLE_PWM_FREQUENCY_HZ/(1<<PWM_RESOLUTION_BITS);
-        //fdb.err = Vehicle.pub_err;
-        //fdb.i_err = Vehicle.pub_err_int;
-        //fdb.d_err = Vehicle.pub_err_d;
+        debug_msg.setpoint  = TPS_TO_MPS(Vehicle.velocity_setpoint_tps);
+        debug_msg.measured  = TPS_TO_MPS(Vehicle.velocity_measured_tps);
+        debug_msg.command  = TPS_TO_MPS(Vehicle.velocity_commanded_tps);
+        debug_msg.pwm = Vehicle.get_velocity_pwm()*(float)1e6/THROTTLE_PWM_FREQUENCY_HZ/(1<<PWM_RESOLUTION_BITS);
+        debug_msg.err = Vehicle.pub_err;
+        debug_msg.i_err = Vehicle.pub_err_int;
+        debug_msg.d_err = Vehicle.pub_err_d;
 
-        pub.publish(&fdb);
+        pub_fdb.publish(&fdb);
+        pub_debug.publish(&debug_msg);
         nh.spinOnce();
         delay(5);
         Vehicle.update_pid();

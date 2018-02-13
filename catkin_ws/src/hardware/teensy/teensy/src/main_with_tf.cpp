@@ -3,12 +3,12 @@
 #include <Arduino.h>
 #include <ros.h>
 #include <ros/time.h>
-#include <teensy/Command.h>
+#include <teensy_msgs/Command.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
 
-void commandCallback(const teensy::Command& cmd) {
+void commandCallback(const teensy_msgs::Command& cmd) {
     // Set throttle speed and steering angle according to command.
     Vehicle.set_velocity_setpoint(cmd.vel_mps);
     Vehicle.set_steering_angle(cmd.steering_rad);
@@ -23,7 +23,7 @@ int main(int argc, char** argv){
     nh.getHardware()->setBaud(115200);
     nh.initNode();
 
-    ros::Subscriber<teensy::Command> sub("/teensy/command", &commandCallback);
+    ros::Subscriber<teensy_msgs::Command> sub("/teensy/command", &commandCallback);
     nh.subscribe(sub);
 
     tf::TransformBroadcaster odom_broadcaster;

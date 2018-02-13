@@ -1,8 +1,8 @@
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <nav_msgs/Odometry.h>
-#include <teensy/Feedback.h>
-#include <teensy/Command.h>
+#include <teensy_msgs/Feedback.h>
+#include <teensy_msgs/Command.h>
 
 #define WHEELBASE_FRONT_MM   67.09
 #define WHEELBASE_REAR_MM   189.91
@@ -11,13 +11,13 @@ double s;
 double v;
 double delta;
 
-void feedbackCallback(const teensy::Feedback& msg)
+void feedbackCallback(const teensy_msgs::Feedback& msg)
 {
     s = msg.odom_m;
     v = msg.vel_mps;
 }
 
-void commandCallback(const teensy::Command& msg)
+void commandCallback(const teensy_msgs::Command& msg)
 {
     delta = msg.steering_rad;
 }

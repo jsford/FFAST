@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
-#include <teensy/Command.h>
-#include <teensy/Feedback.h>
+#include <teensy_msgs/Command.h>
+#include <teensy_msgs/Feedback.h>
 
 #include <sstream>
 #include <fstream>
@@ -16,7 +16,7 @@ void imuCb(const sensor_msgs::Imu& msg)
     yaw_rate_rps = msg.angular_velocity.z;
 }
 
-void fdbCb(const teensy::Feedback& msg)
+void fdbCb(const teensy_msgs::Feedback& msg)
 {
     vel_mps = msg.vel_mps;
 }
@@ -29,8 +29,8 @@ int main(int argc, char **argv)
     ros::Subscriber imu_sub = nh.subscribe("/imu",10,imuCb);
     ros::Subscriber fdb_sub = nh.subscribe("/teensy/feedback",10,fdbCb);
 
-    teensy::Command cmd;
-    ros::Publisher cmd_pub = nh.advertise<teensy::Command>("teensy/command",10);
+    teensy_msgs::Command cmd;
+    ros::Publisher cmd_pub = nh.advertise<teensy_msgs::Command>("teensy/command",10);
 
     std::ofstream outstream("/home/nvidia/Documents/spiral_log.csv");
     outstream << "Servo angle (deg),Velocity (m/s),Yaw rate (rad/s),Steering angle (rad)" << std::endl;
