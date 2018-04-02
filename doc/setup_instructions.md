@@ -115,13 +115,17 @@ If the error `/opt/arduino-1.8.5/java/bin/java: No such file or directory` is en
 ```bash
 $ sudo dpkg --add-architecture armhf
 ```
+
 2. Install 32-bit libraries
 ```
 $ sudo apt-get install libc6:armhf libncurses5:armhf libstdc++6:armhf libx11-dev:armhf libxext-dev:armhf libxrender-dev:armhf libxtst-dev:armhf libfontconfig:armhf libxft-dev:armhf libgtk2.0-0:armhf libsm-dev:armhf libudev-dev:armhf libusb-dev:armhf
 ```
 If the packages are unable to be located, refer to the section below on finding packages' installation candidates.
+
 3. [Download](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) and [install](https://docs.oracle.com/javase/8/docs/technotes/guides/install/linux_jdk.html) 32-bit Java 8 from Oracle website.
+
 4. Extract and move the files into /opt/jdk
+
 5. Update alternatives so the 32-bit version is the default java version. (Instructions were obtained from [here](https://www.digitalocean.com/community/tutorials/how-to-manually-install-oracle-java-on-a-debian-or-ubuntu-vps))
 ```bash
 $ sudo update-alternatives --install /usr/bin/java java /opt/jdk/jdk1.8.0_161/bin/java 100
@@ -150,6 +154,7 @@ javac - manual mode
   link currently points to /opt/jdk/jdk1.8.0_161/bin/javac
   link javac is /usr/bin/javac
 ```
+
 
 If the error `java.lang.UnsatisfiedLinkError: <some_library> : wrong ELF class: ELFCLASS64` is encountered, download the library with armhf architecture.  
 For example, error: `java.lang.UnsatisfiedLinkError: /opt/arduino-1.8.5/java/lib/arm/libawt_xawt.so: libXrender.so.1: wrong ELF class: ELFCLASS64`  

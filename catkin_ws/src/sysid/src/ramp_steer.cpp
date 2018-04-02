@@ -30,7 +30,7 @@ void servoCb(const std_msgs::Float64& msg)
     steering_ang = ( msg.data - steering_offset ) / steering_gain;
 }
 
-void odomCb(const nav_msgs::Odometry& msg)
+void poseCb(const nav_msgs::Odometry& msg)
 {
     long_vel = msg.twist.twist.linear.x;
 }
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     }
 
     ros::Subscriber steer_sub = nh.subscribe("/sensors/servo_position_command",10,servoCb);
-    ros::Subscriber odom_sub = nh.subscribe("/odom",10,odomCb);
+    ros::Subscriber pose_sub = nh.subscribe("/ekf_localization/odom",10,poseCb);
     ros::Subscriber imu_sub = nh.subscribe("/imu",10,imuCb);
     cmd_pub = nh.advertise<ackermann_msgs::AckermannDriveStamped>("commands/keyboard",5);
 
