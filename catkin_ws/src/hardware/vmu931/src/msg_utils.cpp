@@ -13,18 +13,19 @@
 
 void Vmu931::processAccelData(Data_xyz data)
 {
+    ROS_DEBUG("VMU931: acceleration data received.");
     if (publish_imu_) {
-        imu_msg_.linear_acceleration.x = data.x;
-        imu_msg_.linear_acceleration.y = data.y;
-        imu_msg_.linear_acceleration.z = data.z;
+        imu_msg_.linear_acceleration.x = data.x * G_MPS2;
+        imu_msg_.linear_acceleration.y = data.y * G_MPS2;
+        imu_msg_.linear_acceleration.z = data.z * G_MPS2;
         imu_msg_updated_[IMU_ORDER_ACCEL] = true;
         publishImu();
     }
 
     if (publish_vmu_) {
-        vmu_msg_.accel.x = data.x * G_MPS2;
-        vmu_msg_.accel.y = data.y * G_MPS2;
-        vmu_msg_.accel.z = data.z * G_MPS2;
+        vmu_msg_.accel.x = data.x;
+        vmu_msg_.accel.y = data.y;
+        vmu_msg_.accel.z = data.z;
         vmu_msg_updated_[VMU_ORDER_ACCEL] = true;
         publishVmu();
     }
@@ -32,10 +33,11 @@ void Vmu931::processAccelData(Data_xyz data)
 
 void Vmu931::processEulerData(Data_xyz data)
 {
+    ROS_DEBUG("VMU931: euler data received.");
     if (publish_vmu_) {
-        vmu_msg_.euler.x = data.x * G_MPS2;
-        vmu_msg_.euler.y = data.y * G_MPS2;
-        vmu_msg_.euler.z = data.z * G_MPS2;
+        vmu_msg_.euler.x = data.x;
+        vmu_msg_.euler.y = data.y;
+        vmu_msg_.euler.z = data.z;
         vmu_msg_updated_[VMU_ORDER_EULER] = true;
         publishVmu();
     }
@@ -43,6 +45,7 @@ void Vmu931::processEulerData(Data_xyz data)
 
 void Vmu931::processGyroData(Data_xyz data)
 {
+    ROS_DEBUG("VMU931: gyro data received.");
     if (publish_imu_) {
         imu_msg_.angular_velocity.x = data.x * M_PI / 180;
         imu_msg_.angular_velocity.y = data.y * M_PI / 180;
@@ -62,6 +65,7 @@ void Vmu931::processGyroData(Data_xyz data)
 
 void Vmu931::processHeadingData(Data_h data)
 {
+    ROS_DEBUG("VMU931: heading data received.");
     if (publish_vmu_) {
         vmu_msg_.heading.data = data.h;
         vmu_msg_updated_[VMU_ORDER_HEADING] = true;
@@ -71,6 +75,7 @@ void Vmu931::processHeadingData(Data_h data)
 
 void Vmu931::processMagData(Data_xyz data)
 {
+    ROS_DEBUG("VMU931: magnetic field data received.");
     if (publish_mag_) {
         mag_msg_.magnetic_field.x = data.x;
         mag_msg_.magnetic_field.y = data.y;
@@ -90,6 +95,7 @@ void Vmu931::processMagData(Data_xyz data)
 
 void Vmu931::processQuatData(Data_wxyz data)
 {
+    ROS_DEBUG("VMU931: quaternion data received.");
     if (publish_imu_) {
         imu_msg_.orientation.w = data.w;
         imu_msg_.orientation.x = data.x;

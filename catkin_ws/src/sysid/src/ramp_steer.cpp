@@ -10,6 +10,7 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <ackermann_msgs/AckermannDriveStamped.h>
+#include <tf/transform_datatypes.h>
 
 #include <sstream>
 #include <fstream>
@@ -33,6 +34,11 @@ void servoCb(const std_msgs::Float64& msg)
 void poseCb(const nav_msgs::Odometry& msg)
 {
     long_vel = msg.twist.twist.linear.x;
+
+    static std::ofstream mat_outstream("/home/nvidia/Documents/mat_rs.csv");
+    mat_outstream << "1.5," << steering_ang << "," << msg.pose.pose.position.x << "," << msg.pose.pose.position.y << "," << tf::getYaw(msg.pose.pose.orientation);
+    mat_outstream << "," << msg.twist.twist.linear.x << "," << msg.twist.twist.linear.y << "," << msg.twist.twist.angular.z << std::endl;
+    
 }
 
 void imuCb(const sensor_msgs::Imu& msg)
@@ -43,7 +49,8 @@ void imuCb(const sensor_msgs::Imu& msg)
     
     yaw_rate = msg.angular_velocity.z;
     if (!last_yaw_rate) yaw_rate_dot = (yaw_rate - last_yaw_rate) / (curr_time - last_time).toSec();
-    lat_acc = -1.0*msg.linear_acceleration.y;     //imu y-axis is -ve of car y-axis
+    // lat_acc = -1.0*msg.linear_acceleration.y;     //imu y-axis is -ve of car y-axis
+    lat_acc = msg.linear_acceleration.y;
 
     last_yaw_rate = yaw_rate;
     last_time = curr_time;
