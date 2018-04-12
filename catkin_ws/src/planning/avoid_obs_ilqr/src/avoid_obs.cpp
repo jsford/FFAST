@@ -1,6 +1,6 @@
 #include "avoid_obs.h"
 
-#define GOAL_TOLERANCE 0.5
+#define GOAL_TOLERANCE 0.3
 #define CMD_RATE        50
 
 #define VEL_KP   0.001
@@ -13,7 +13,7 @@
 #define YAW_ERR_INT_LIMIT 100
 
 AvoidObs::AvoidObs(ros::NodeHandle nh, ros::NodeHandle pnh) : 
-    cmd_on_plan_(0), cmd_rate_(CMD_RATE), goal_set_(false), dist_to_goal_(5.0)
+    cmd_on_plan_(0), cmd_rate_(CMD_RATE), goal_set_(false), state_rcv_(false), dist_to_goal_(5.0)
 {
     // setup publishers and subscribers
     state_sub_  = nh.subscribe("ekf_localization/odom", 10, &AvoidObs::stateCb, this);
@@ -26,20 +26,24 @@ AvoidObs::AvoidObs(ros::NodeHandle nh, ros::NodeHandle pnh) :
 
     // wait for iLQR node and localization to start
     ros::Duration(5).sleep();
-    // default goal
+
+    // default goal - 5m straight ahead of car
     if (!goal_set_) {
+        while (ros::ok() && !state_rcv_) ros::spinOnce();
         geometry_msgs::PoseStamped goal;
         goal.header.stamp = ros::Time::now();
         goal.header.frame_id = "map";
-        goal.pose.position.x = 5.0;
-        goal.pose.position.y = 0.0;
-        goal.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
+        goal.pose.position.x = state_.pose.x + 5*cos(state_.pose.theta);
+        goal.pose.position.y = state_.pose.y + 5*sin(state_.pose.theta);
+        goal.pose.orientation = tf::createQuaternionMsgFromYaw(state_.pose.theta);
         goal_pub_.publish(goal);
     }
 }
 
 void AvoidObs::stateCb(const nav_msgs::Odometry::ConstPtr& msg)
 {
+    if (!state_rcv_) state_rcv_ = true;
+
     state_.pose.x = msg->pose.pose.position.x;
     state_.pose.y = msg->pose.pose.position.y;
     state_.pose.theta = tf::getYaw(msg->pose.pose.orientation);
@@ -47,8 +51,10 @@ void AvoidObs::stateCb(const nav_msgs::Odometry::ConstPtr& msg)
     state_.twist.x = msg->twist.twist.linear.x;
     state_.twist.theta = msg->twist.twist.angular.z;
 
-    // dist_to_goal_ = sqrt( pow(state_.pose.x-goal_.x,2.0) + pow(state_.pose.y-goal_.y,2.0) );
-    dist_to_goal_ = fabs(state_.pose.x-goal_.x);
+    if (goal_set_) {
+        // dist_to_goal_ = sqrt( pow(state_.pose.x-goal_.x,2.0) + pow(state_.pose.y-goal_.y,2.0) );
+        dist_to_goal_ = fabs(state_.pose.x-goal_.x);
+    }
 }
 
 void AvoidObs::goalCb(const geometry_msgs::PoseStamped::ConstPtr& msg)
@@ -76,29 +82,32 @@ void AvoidObs::goalCb(const geometry_msgs::PoseStamped::ConstPtr& msg)
 
 void AvoidObs::ilqrCb(const avoid_obs_ilqr::IlqrOutput &msg)
 {
-    ilqr_input_.header.stamp = ros::Time::now();
-    ilqr_input_.state = state_;
-    ilqr_input_.previouscommand = cmd_.drive;
-    ilqr_input_.remainingcommands.clear();
-    for (int i=cmd_on_plan_; i<plan_.commands.size(); i++)
-        ilqr_input_.remainingcommands.push_back(plan_.commands[i]);
-    ilqr_input_.goal = goal_;
-    ilqr_pub_.publish(ilqr_input_);
+    if (goal_set_)
+    {
+        ilqr_input_.header.stamp = ros::Time::now();
+        ilqr_input_.state = state_;
+        ilqr_input_.previouscommand = cmd_.drive;
+        ilqr_input_.remainingcommands.clear();
+        for (int i=cmd_on_plan_; i<plan_.commands.size(); i++)
+            ilqr_input_.remainingcommands.push_back(plan_.commands[i]);
+        ilqr_input_.goal = goal_;
+        ilqr_pub_.publish(ilqr_input_);
 
-    plan_ = msg;
-    cmd_on_plan_ = 0;
+        plan_ = msg;
+        cmd_on_plan_ = 0;
 
-    path_.header.stamp = ros::Time::now();
-    path_.header.frame_id = "map";
-    path_.poses.resize(plan_.states.size());
-    for (int i=0; i<plan_.states.size(); i++) {
-        path_.poses[i].header.stamp = path_.header.stamp + ros::Duration(i*0.02);
-        path_.poses[i].header.frame_id = "map";
-        path_.poses[i].pose.position.x = plan_.states[i].pose.x;
-        path_.poses[i].pose.position.y = plan_.states[i].pose.y;
-        path_.poses[i].pose.orientation = tf::createQuaternionMsgFromYaw(plan_.states[i].pose.theta);
+        path_.header.stamp = ros::Time::now();
+        path_.header.frame_id = "map";
+        path_.poses.resize(plan_.states.size());
+        for (int i=0; i<plan_.states.size(); i++) {
+            path_.poses[i].header.stamp = path_.header.stamp + ros::Duration(i*0.02);
+            path_.poses[i].header.frame_id = "map";
+            path_.poses[i].pose.position.x = plan_.states[i].pose.x;
+            path_.poses[i].pose.position.y = plan_.states[i].pose.y;
+            path_.poses[i].pose.orientation = tf::createQuaternionMsgFromYaw(plan_.states[i].pose.theta);
+        }
+        path_pub_.publish(path_);
     }
-    path_pub_.publish(path_);
 }
 
 void AvoidObs::spin(void)

@@ -2,11 +2,15 @@
 #define _AVOID_OBS_ILQR_H_
 
 #define HORIZON   10
-#define MAX_ITER 5000
+#define MAX_ITER  50
 
 //// REMEMBER TO CHANGE THIS IF THE iLQG_func.c FILE IS CHANGED!!!!!!! ////
-#define P_XDES_IDX 28
-#define P_OBS_IDX   3
+#define P_XDES_IDX    26
+#define P_OBS_IDX     3
+#define P_LANECTR_IDX 17
+#define P_CF_IDX      9
+
+#define CHANGE_CF_DIST 0.5
 
 #include <math.h>
 #include <boost/random.hpp>
@@ -43,6 +47,7 @@ class iLQR
     int N_;
     double x0_[10], u0_[HORIZON*2], xDes_[6], Obs_[2];
     tOptSet* Op_;
+    double cf_bef_goal_[6], cf_aft_goal_[6];
     geometry_msgs::Pose2D state_;
 
     // ROS callbacks

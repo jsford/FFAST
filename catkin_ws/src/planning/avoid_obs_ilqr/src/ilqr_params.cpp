@@ -46,6 +46,9 @@ int iLQR::assignParams(ros::NodeHandle nh, ros::NodeHandle pnh)
         _params[i].name = (char *)_param_names[i];
         _params[i].size = 0;
 
+        //// REMEMBER TO CHANGE THESE IF THE iLQG_func.c FILE IS CHANGED!!!!!!!  ////
+        ////                     THESE ARE THE CONSTANT PARAMS                   ////
+
         if (strcmp(_params[i].name , "dt")          == 0) _params[i].data = &_dt; 
         if (strcmp(_params[i].name , "limThr")      == 0) _params[i].data = &_limThr[0]  ;
         if (strcmp(_params[i].name , "cu")          == 0) _params[i].data = &_cu[0]      ;
@@ -53,14 +56,11 @@ int iLQR::assignParams(ros::NodeHandle nh, ros::NodeHandle pnh)
         if (strcmp(_params[i].name , "cf")          == 0) _params[i].data = &_cf[0]      ;
         if (strcmp(_params[i].name , "pf")          == 0) _params[i].data = &_pf[0]      ;
         if (strcmp(_params[i].name , "cx")          == 0) _params[i].data = &_cx[0]      ;
-        if (strcmp(_params[i].name , "cdx")         == 0) _params[i].data = &_cdx[0]     ;
         if (strcmp(_params[i].name , "px")          == 0) _params[i].data = &_px[0]      ;
-        if (strcmp(_params[i].name , "cdrift")      == 0) _params[i].data = &_cdrift     ;
-        if (strcmp(_params[i].name , "lane_center") == 0) _params[i].data = &_lane_center;
         if (strcmp(_params[i].name , "lane_thres")  == 0) _params[i].data = &_lane_thres ;
         if (strcmp(_params[i].name , "croad")       == 0) _params[i].data = &_croad      ;
         if (strcmp(_params[i].name , "k_pos")       == 0) _params[i].data = &_k_pos      ;
-        if (strcmp(_params[i].name , "k_vel")       == 0) _params[i].data = &_k_vel      ;
+        if (strcmp(_params[i].name , "k_vel")       == 0) _params[i].data = &_k_vel[0]   ;
         if (strcmp(_params[i].name , "d_thres")     == 0) _params[i].data = &_d_thres    ;
         if (strcmp(_params[i].name , "m")           == 0) _params[i].data = &_m          ;
         if (strcmp(_params[i].name , "Iz")          == 0) _params[i].data = &_Iz         ;
@@ -87,71 +87,19 @@ int iLQR::assignParams(ros::NodeHandle nh, ros::NodeHandle pnh)
             ROS_ERROR("iLQR parameter %s is not member of parameters struct.", _params[i].name);
     }
 
+    // set variables for cf
+    for (int i=0; i<2; i++) {
+        cf_bef_goal_[i] = _cf[i];
+        cf_aft_goal_[i] = 0;
+    }
+    for (int i=2; i<6; i++) {
+        cf_bef_goal_[i] = 0;
+        cf_aft_goal_[i] = _cf[i];
+    }
+
     if (num_set != N_CONST_PARAMS)
         ROS_ERROR("%d iLQR parameters not assigned.", N_CONST_PARAMS-num_set);
     else
         return 0;
 
 }
-
-
-    // typedef struct {
-    //     param_t G_f;
-    //     param_t G_r;
-    //     param_t Iz;
-    //     param_t a;
-    //     param_t b;
-    //     param_t c_a;
-    //     param_t c_x;
-    //     param_t cdrift;
-    //     param_t cdu;
-    //     param_t cdx;
-    //     param_t cf;
-    //     param_t croad;
-    //     param_t cu;
-    //     param_t cx;
-    //     param_t d_thres;
-    //     param_t dt;
-    //     param_t k_pos;
-    //     param_t k_vel;
-    //     param_t lane_center;
-    //     param_t lane_thres;
-    //     param_t limSteer;
-    //     param_t limThr;
-    //     param_t m;
-    //     param_t mu;
-    //     param_t mu_s;
-    //     param_t pf;
-    //     param_t px;
-    // } params_t;
-
-    // params_t _params_;
-    
-    
-    // _params_.G_f.name          = "G_f";
-    // _params_.G_r.name          = "G_r";
-    // _params_.Iz.name           = "Iz";
-    // _params_.a.name            = "a";
-    // _params_.b.name            = "b";
-    // _params_.c_a.name          = "c_a";
-    // _params_.c_x.name          = "c_x";
-    // _params_.cdrift.name       = "cdrift";
-    // _params_.cdu.name          = "cdu";
-    // _params_.cdx.name          = "cdx";
-    // _params_.cf.name           = "cf";
-    // _params_.croad.name        = "croad";
-    // _params_.cu.name           = "cu";
-    // _params_.cx.name           = "cx";
-    // _params_.d_thres.name      = "d_thres";
-    // _params_.dt.name           = "dt";
-    // _params_.k_pos.name        = "k_pos";
-    // _params_.k_vel.name        = "k_vel";
-    // _params_.lane_center.name  = "lane_center";
-    // _params_.lane_thres.name   = "lane_thres";
-    // _params_.limSteer.name     = "limSteer";
-    // _params_.limThr.name       = "limThr";
-    // _params_.m.name            = "m";
-    // _params_.mu.name           = "mu";
-    // _params_.mu_s.name         = "mu_s";
-    // _params_.pf.name           = "pf";
-    // _params_.px.name           = "px";

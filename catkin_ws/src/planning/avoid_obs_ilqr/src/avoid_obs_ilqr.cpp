@@ -75,6 +75,8 @@ void iLQR::ilqrCb(const avoid_obs_ilqr::IlqrInput::ConstPtr& msg)
     Op_->x0 = x0_;
     Op_->p[P_XDES_IDX] = xDes_;
     Op_->p[P_OBS_IDX] = Obs_;
+    Op_->p[P_LANECTR_IDX] = &xDes_[1];
+    fabs(x0_[0]-xDes_[0])>CHANGE_CF_DIST ? Op_->p[P_CF_IDX] = cf_bef_goal_ : Op_->p[P_CF_IDX] = cf_aft_goal_;
 
     // outputs
     double x_new[N_*N_X], u_new[HORIZON*N_U];
