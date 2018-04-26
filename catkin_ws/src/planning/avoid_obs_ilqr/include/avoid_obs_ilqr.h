@@ -5,12 +5,11 @@
 #define MAX_ITER  50
 
 //// REMEMBER TO CHANGE THIS IF THE iLQG_func.c FILE IS CHANGED!!!!!!! ////
-#define P_XDES_IDX    26
-#define P_OBS_IDX     3
-#define P_LANECTR_IDX 17
-#define P_CF_IDX      9
+#define P_OBS_VEL_IDX 23
+#define P_GOAL_IDX    13
+#define P_CF_IDX      8
 
-#define CHANGE_CF_DIST 0.5
+#define CHANGE_CF_DIST 0.1
 
 #include <math.h>
 #include <boost/random.hpp>
@@ -18,7 +17,6 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
 #include <obstacle_detector/Obstacles.h>
-#include <obstacle_detector/CircleObstacle.h>
 #include <avoid_obs_ilqr/IlqrInput.h>
 #include <avoid_obs_ilqr/IlqrOutput.h>
 
@@ -45,10 +43,9 @@ class iLQR
 
     // variables
     int N_;
-    double x0_[10], u0_[HORIZON*2], xDes_[6], Obs_[2];
     tOptSet* Op_;
+    double x0_[10], u0_[HORIZON*2], obs_vel_[2];
     double cf_bef_goal_[6], cf_aft_goal_[6];
-    geometry_msgs::Pose2D state_;
 
     // ROS callbacks
     void ilqrCb(const avoid_obs_ilqr::IlqrInput::ConstPtr& msg);

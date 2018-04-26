@@ -6,13 +6,12 @@
 #include <ros/ros.h>
 #include <tf/transform_datatypes.h>
 #include <nav_msgs/Odometry.h>
-#include <obstacle_detector/Obstacles.h>
 #include <ackermann_msgs/AckermannDriveStamped.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <obstacle_detector/CircleObstacle.h>
 #include <avoid_obs_ilqr/IlqrInput.h>
 #include <avoid_obs_ilqr/IlqrOutput.h>
+#include <avoid_obs_ilqr/BoolStamped.h>
 #include <nav_msgs/Path.h>
 
 class AvoidObs
@@ -24,10 +23,10 @@ class AvoidObs
   private:
     // ROS Handles
     ros::Subscriber state_sub_;
-    ros::Subscriber goal_sub_;
     ros::Subscriber ilqr_sub_;
     ros::Publisher goal_pub_;
     ros::Publisher cmd_pub_;
+    ros::Publisher timer_pub_;
     ros::Publisher ilqr_pub_;
     ros::Publisher path_pub_;
     
@@ -37,12 +36,13 @@ class AvoidObs
     avoid_obs_ilqr::IlqrInput ilqr_input_;
     nav_msgs::Path path_;
 
+    // Variables
     avoid_obs_ilqr::State state_;
     geometry_msgs::Pose2D goal_;
     bool goal_set_;
+    bool state_rcv_;
     double dist_to_goal_;
     int cmd_on_plan_;
-
     ros::Rate cmd_rate_;
 
     double clamp_(double val, double lower_limit, double upper_limit);
